@@ -18,27 +18,70 @@ db.init_app(app)
 
 @app.route('/events')
 def get_events():
-    pass
+    events = []
+    for event in Event.query.all():
+        body = {
+            "id": event.id,
+            "name": event.name,
+            "location": event.location
+        }
+        events.append(body)
+    return jsonify(events), 200
 
 
 @app.route('/events/<int:id>/sessions')
 def get_event_sessions(id):
-    pass
-
+    sessions = []
+    for session in Session.query.filter_by(event_id=id).all():
+        body = {
+            "id": session.id,
+            "title": session.title,
+            "start_time": session.start_time.isoformat() if session.start_time else None
+        }
+        sessions.append(body)
+    if not sessions:
+        return jsonify({"error": "Event not found"}), 404
+    return jsonify(sessions), 200
+    
 
 @app.route('/speakers')
 def get_speakers():
-    pass
+    speakers = []
+    for speaker in Speaker.query.all():
+        body = {
+            "id": speaker.id,
+            "name": speaker.name
+        }
+        speakers.append(body)
+    return jsonify(speakers), 200
 
 
 @app.route('/speakers/<int:id>')
 def get_speaker(id):
-    pass
+    speaker = db.session.get(Speaker, id)
+    if not speaker:
+        return jsonify({"error": "Speaker not found"}), 404
+    body = {
+        "id": speaker.id,
+        "name": speaker.name,
+        "bio_text": speaker.bio.bio_text if speaker.bio else "No bio available"
+    }
+    return jsonify(body), 200
 
 
 @app.route('/sessions/<int:id>/speakers')
 def get_session_speakers(id):
-    pass
+    speakers = []
+    for speaker in Speaker.query.join(Session.speakers).filter(Session.id == id).all():
+        body = {
+            "id": speaker.id,
+            "name": speaker.name,
+            "bio_text": speaker.bio.bio_text if speaker.bio else "No bio available"
+        }
+        speakers.append(body)
+    if not speakers:
+        return jsonify({"error": "Session not found"}), 404
+    return jsonify(speakers), 200
 
 
 if __name__ == '__main__':
